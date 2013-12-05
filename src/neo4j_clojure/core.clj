@@ -163,3 +163,35 @@
                       ON CREATE SET p.created = timestamp()
                       ON MATCH SET p.accessed = coalesce(p.accessed, 0) + 1
                       RETURN p.created, p.accessed" name)))
+
+(defn create-multiple-relationship
+  []
+  (run-query "MATCH (a)-[:ACTED_IN|:DIRECTED]->()<-[:ACTED_IN|:DIRECTED]-(b)
+              CREATE UNIQUE (a)-[:KNOWS]-(b)"))
+
+(defn friend-of-friend
+  [name]
+  (run-query (format "MATCH (p:Person) - [:KNOWS*2] - (fof)
+              WHERE p.name= '%s'
+              RETURN DISTINCT fof.name" name)))
+
+(defn friend-of-friend-but-not-first-level-friends
+  [name]
+  (run-query (format "MATCH (p:Person) - [:KNOWS*2] - (fof)
+              WHERE p.name= '%s'
+              AND NOT (p) - [:KNOWS] - (fof) AND NOT (p=fof)
+              RETURN DISTINCT fof.name" name)))
+
+(defn shortest-path
+  [p1 p2]
+  (run-query (format "MATCH p=shortestPath(
+              (p1:Person)-[:KNOWS*]->(p2:Person))
+              WHERE p1.name='%s' and p2.name= '%s'
+              RETURN length(rels(p))" p1 p2)))
+
+(defn path-between
+  [p1 p2]
+  (run-query (format "MATCH p=shortestPath(
+              (p1:Person)-[:KNOWS*]->(p2:Person))
+              WHERE p1.name='%s' and p2.name= '%s'
+              RETURN [n IN nodes(p) | n.name] as NAMES" p1 p2)))
