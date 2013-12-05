@@ -46,12 +46,40 @@
   (cy/tquery "MATCH (n)
               RETURN n"))
 
-(defn filter-by-name []
-  (cy/tquery "MATCH (n)
-              WHERE has(n.name) AND n.name = 'Tom Hanks'
-              RETURN n"))
+(defn filter-by-name [name]
+  (cy/tquery (format "MATCH (n)
+              WHERE has(n.name) AND n.name = '%s'
+              RETURN n" name)))
 
-(defn node-with-label []
-  (cy/query "MATCH (tom:Person)
-             WHERE tom.name = 'Tom Hanks'
-             RETURN tom"))
+(defn node-with-label [name]
+  (cy/tquery (format "MATCH (p:Person)
+             WHERE p.name = '%s'
+             RETURN tom" name)))
+
+(defn create-index-on-person []
+  (cy/tquery "CREATE INDEX ON :Person(name)"))
+
+(defn create-index-on-movie []
+  (cy/tquery "CREATE INDEX ON :Movie(title)"))
+
+(defn query-from-labeled-node [name]
+  (cy/tquery (format "MATCH (p:Person)-[:ACTED_IN] -> (movie:Movie)
+              WHERE p.name='%s'
+              RETURN movie.title" name)))
+
+(defn query-distinct [name]
+  (cy/tquery (format "MATCH (p:Person) - [:ACTED_IN] -> (movie:Movie),
+                      (director:Person)-[:DIRECTED] -> (movie:Movie)
+                      WHERE p.name='%s'
+                      RETURN DISTINCT director.name" name)))
+
+(defn both-acted [name othername]
+  (cy/tquery (format "MATCH (p1:Person)-[:ACTED_IN] -> (movie),
+                      (p2:Person)-[:ACTED_IN] -> (movie)
+                      WHERE p1.name='%s' AND p2.name='%s'
+                      RETURN movie.title" name othername)))
+
+(defn acted-before-year [name year]
+  (cy/tquery (format "MATCH (p1:Person)-[:ACTED_IN] -> (movie)
+                      WHERE p1.name='%s' AND movie.released < %s
+                      RETURN movie.title" name year)))
