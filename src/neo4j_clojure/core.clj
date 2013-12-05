@@ -156,3 +156,10 @@
                SET r.roles = [x in r.roles WHERE x <> 'Sean'] + 'Sean Divine'
                RETURN actor, r
                " actor)))
+
+(defn match-or-create
+  [name]
+  (run-query (format "MERGE (p:Person {name:'%s'})
+                      ON CREATE SET p.created = timestamp()
+                      ON MATCH SET p.accessed = coalesce(p.accessed, 0) + 1
+                      RETURN p.created, p.accessed" name)))
